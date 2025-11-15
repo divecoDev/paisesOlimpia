@@ -1355,26 +1355,61 @@ var ElementorProFrontendConfig = {"ajaxurl":"https:\/\/camasolympiaonline.com\/g
         'NI': '/nc'  // Nicaragua
     };
  
+    // IPs de la empresa - acceso directo a página de países para el equipo
+    const companyIPs = [
+        '181.114.9.146',
+        '148.230.25.194'
+    ];
+
+    // Función para verificar si una IP coincide con las IPs de la empresa
+    function isCompanyIP(ip) {
+        return companyIPs.includes(ip);
+    }
+
     // Función para obtener el país y redirigir
     async function checkAndRedirect() {
         try {
             // Usamos una API gratuita para obtener el país (ej: ipapi.co)
             const response = await fetch('https://ipapi.co/json/');
             const data = await response.json();
+            const userIP = data.ip; // IP del usuario
             const countryCode = data.country_code; // Retorna 'GT', 'SV', etc.
- 
+
+            // EXCEPCIÓN: Si es IP de la empresa, siempre redirigir a la página de países
+            if (isCompanyIP(userIP)) {
+                const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
+                const currentUrl = window.location.href;
+                if (!currentUrl.includes('paises.camasolympiaonline.com')) {
+                    console.log(`IP de empresa (${userIP}) detectada, redirigiendo a página de países para trabajo del equipo.`);
+                    window.location.href = paisesPageUrl + window.location.search;
+                } else {
+                    console.log(`IP de empresa (${userIP}) detectada, manteniendo en página de países.`);
+                }
+                return; // Salir de la función, no aplicar lógica de país
+            }
+
             // Verificamos si tenemos una ruta para ese país
             if (countryRoutes[countryCode]) {
                 const targetPath = countryRoutes[countryCode];
+                const targetUrl = 'https://camasolympiaonline.com' + targetPath;
                 // IMPORTANTE: Verificar si ya estamos en esa ruta para no hacer un bucle infinito
-                if (!window.location.pathname.startsWith(targetPath)) {
-                    console.log(`Redirigiendo a ${targetPath} para usuarios de ${countryCode}`);
-                    window.location.href = targetPath + window.location.search; // Mantiene los query params si existen
+                const currentUrl = window.location.href;
+                if (!currentUrl.includes(targetUrl) && !window.location.pathname.startsWith(targetPath)) {
+                    console.log(`Redirigiendo a ${targetUrl} para usuarios de ${countryCode}`);
+                    window.location.href = targetUrl + window.location.search; // Mantiene los query params si existen
                 }
             } else {
                 // Lógica para usuarios que NO son de esos países (Default)
-                // Por ejemplo: Dejarlos en la raíz o enviarlos a una ruta global
-                console.log("País no listado, manteniendo ruta actual.");
+                // Mantenerlos en esta página de selección de países
+                const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
+                const currentUrl = window.location.href;
+                // Si no está ya en el dominio de paises, redirigirlo aquí
+                if (!currentUrl.includes('paises.camasolympiaonline.com')) {
+                    console.log(`País no listado (${countryCode}), redirigiendo a página de selección de países.`);
+                    window.location.href = paisesPageUrl + window.location.search;
+                } else {
+                    console.log(`País no listado (${countryCode}), manteniendo en página de selección de países.`);
+                }
             }
  
         } catch (error) {
