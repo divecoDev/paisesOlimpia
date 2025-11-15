@@ -4,6 +4,12 @@
 	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
     <script>
         (function() {
+        // Forzar HTTPS si accedieron por HTTP
+        if (window.location.protocol === 'http:') {
+            window.location.replace('https://' + window.location.host + window.location.pathname + window.location.search);
+            return;
+        }
+        
         // Mapeo de Código de País (ISO) -> Tu ruta específica
         // Nota: Nicaragua es 'NI' en ISO, pero tu ruta es '/nc', así que hice el ajuste.
         const countryRoutes = {
