@@ -1,91 +1,115 @@
 <html lang="es"><head>
 	<meta charset="UTF-8">
-		<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+	<!-- SCRIPT BLOQUEANTE DE REDIRECCIÓN - SE EJECUTA PRIMERO -->
+	<style id="blocking-style">html{visibility:hidden!important;opacity:0!important}</style>
+	<script>
+	(function() {
+		// Forzar HTTPS si accedieron por HTTP
+		if (window.location.protocol === 'http:') {
+			window.location.replace('https://' + window.location.host + window.location.pathname + window.location.search);
+			return;
+		}
+		
+		// Función para permitir renderizar la página
+		function allowRender() {
+			var blockingStyle = document.getElementById('blocking-style');
+			if (blockingStyle) {
+				blockingStyle.remove();
+			}
+			// También asegurar que el html sea visible
+			if (document.documentElement) {
+				document.documentElement.style.visibility = 'visible';
+				document.documentElement.style.opacity = '1';
+			}
+		}
+		
+		// Mapeo de Código de País (ISO) -> Tu ruta específica
+		const countryRoutes = {
+			'GT': '/gt', // Guatemala
+			'SV': '/sv', // El Salvador
+			'HN': '/hn', // Honduras
+			'NI': '/nc'  // Nicaragua
+		};
+		
+		// IPs de la empresa - acceso directo a página de países para el equipo
+		const companyIPs = [
+			'181.114.9.146',
+			'148.230.25.194'
+		];
+		
+		// Función para verificar si una IP coincide con las IPs de la empresa
+		function isCompanyIP(ip) {
+			return companyIPs.includes(ip);
+		}
+		
+		// Función para obtener el país y redirigir
+		async function checkAndRedirect() {
+			try {
+				// Usamos una API gratuita para obtener el país (ej: ipapi.co)
+				const response = await fetch('https://ipapi.co/json/');
+				const data = await response.json();
+				const userIP = data.ip; // IP del usuario
+				const countryCode = data.country_code; // Retorna 'GT', 'SV', etc.
+    
+				// EXCEPCIÓN: Si es IP de la empresa, siempre redirigir a la página de países
+				if (isCompanyIP(userIP)) {
+					const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
+					const currentUrl = window.location.href;
+					if (!currentUrl.includes('paises.camasolympiaonline.com')) {
+						console.log(`IP de empresa (${userIP}) detectada, redirigiendo a página de países para trabajo del equipo.`);
+						window.location.replace(paisesPageUrl + window.location.search);
+						return;
+					} else {
+						// Permitir renderizar si ya está en la página correcta
+						allowRender();
+					}
+					return; // Salir de la función, no aplicar lógica de país
+				}
+    
+				// Verificamos si tenemos una ruta para ese país
+				if (countryRoutes[countryCode]) {
+					const targetPath = countryRoutes[countryCode];
+					const targetUrl = 'https://camasolympiaonline.com' + targetPath;
+					// IMPORTANTE: Verificar si ya estamos en esa ruta para no hacer un bucle infinito
+					const currentUrl = window.location.href;
+					if (!currentUrl.includes(targetUrl) && !window.location.pathname.startsWith(targetPath)) {
+						console.log(`Redirigiendo a ${targetUrl} para usuarios de ${countryCode}`);
+						window.location.replace(targetUrl + window.location.search); // Mantiene los query params si existen
+						return;
+					} else {
+						// Permitir renderizar si ya está en la página correcta
+						allowRender();
+					}
+				} else {
+					// Lógica para usuarios que NO son de esos países (Default)
+					// Mantenerlos en esta página de selección de países
+					const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
+					const currentUrl = window.location.href;
+					// Si no está ya en el dominio de paises, redirigirlo aquí
+					if (!currentUrl.includes('paises.camasolympiaonline.com')) {
+						console.log(`País no listado (${countryCode}), redirigiendo a página de selección de países.`);
+						window.location.replace(paisesPageUrl + window.location.search);
+						return;
+					} else {
+						// Permitir renderizar si ya está en la página correcta
+						allowRender();
+					}
+				}
+				
+			} catch (error) {
+				console.error("Error obteniendo la geolocalización:", error);
+				// En caso de error, permitir renderizar la página
+				allowRender();
+			}
+		}
+		
+		// Ejecutar inmediatamente - bloquea hasta completar
+		checkAndRedirect();
+	})();
+	</script>
+	<!-- FIN SCRIPT BLOQUEANTE -->
+	<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
 	<style>img:is([sizes="auto" i], [sizes^="auto," i]) { contain-intrinsic-size: 3000px 1500px }</style>
-    <script>
-        (function() {
-        // Forzar HTTPS si accedieron por HTTP
-        if (window.location.protocol === 'http:') {
-            window.location.replace('https://' + window.location.host + window.location.pathname + window.location.search);
-            return;
-        }
-        
-        // Mapeo de Código de País (ISO) -> Tu ruta específica
-        // Nota: Nicaragua es 'NI' en ISO, pero tu ruta es '/nc', así que hice el ajuste.
-        const countryRoutes = {
-            'GT': '/gt', // Guatemala
-            'SV': '/sv', // El Salvador
-            'HN': '/hn', // Honduras
-            'NI': '/nc'  // Nicaragua
-        };
-     
-        // IPs de la empresa - acceso directo a página de países para el equipo
-        const companyIPs = [
-            '181.114.9.146',
-            '148.230.25.194'
-        ];
-    
-        // Función para verificar si una IP coincide con las IPs de la empresa
-        function isCompanyIP(ip) {
-            return companyIPs.includes(ip);
-        }
-    
-        // Función para obtener el país y redirigir
-        async function checkAndRedirect() {
-            try {
-                // Usamos una API gratuita para obtener el país (ej: ipapi.co)
-                const response = await fetch('https://ipapi.co/json/');
-                const data = await response.json();
-                const userIP = data.ip; // IP del usuario
-                const countryCode = data.country_code; // Retorna 'GT', 'SV', etc.
-    
-                // EXCEPCIÓN: Si es IP de la empresa, siempre redirigir a la página de países
-                if (isCompanyIP(userIP)) {
-                    const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
-                    const currentUrl = window.location.href;
-                    if (!currentUrl.includes('paises.camasolympiaonline.com')) {
-                        console.log(`IP de empresa (${userIP}) detectada, redirigiendo a página de países para trabajo del equipo.`);
-                        window.location.href = paisesPageUrl + window.location.search;
-                    } else {
-                        console.log(`IP de empresa (${userIP}) detectada, manteniendo en página de países.`);
-                    }
-                    return; // Salir de la función, no aplicar lógica de país
-                }
-    
-                // Verificamos si tenemos una ruta para ese país
-                if (countryRoutes[countryCode]) {
-                    const targetPath = countryRoutes[countryCode];
-                    const targetUrl = 'https://camasolympiaonline.com' + targetPath;
-                    // IMPORTANTE: Verificar si ya estamos en esa ruta para no hacer un bucle infinito
-                    const currentUrl = window.location.href;
-                    if (!currentUrl.includes(targetUrl) && !window.location.pathname.startsWith(targetPath)) {
-                        console.log(`Redirigiendo a ${targetUrl} para usuarios de ${countryCode}`);
-                        window.location.href = targetUrl + window.location.search; // Mantiene los query params si existen
-                    }
-                } else {
-                    // Lógica para usuarios que NO son de esos países (Default)
-                    // Mantenerlos en esta página de selección de países
-                    const paisesPageUrl = 'https://paises.camasolympiaonline.com/';
-                    const currentUrl = window.location.href;
-                    // Si no está ya en el dominio de paises, redirigirlo aquí
-                    if (!currentUrl.includes('paises.camasolympiaonline.com')) {
-                        console.log(`País no listado (${countryCode}), redirigiendo a página de selección de países.`);
-                        window.location.href = paisesPageUrl + window.location.search;
-                    } else {
-                        console.log(`País no listado (${countryCode}), manteniendo en página de selección de países.`);
-                    }
-                }
-     
-            } catch (error) {
-                console.error("Error obteniendo la geolocalización:", error);
-                // En caso de error (bloqueadores de anuncios, fallo de API), no hacemos nada
-            }
-        }
-     
-        // Ejecutar
-        checkAndRedirect();
-    })();
-    </script>
 <!-- Google Tag Manager for WordPress by gtm4wp.com -->
 <script async="" src="https://scripts.clarity.ms/0.8.40/clarity.js"></script><script async="" src="https://www.clarity.ms/tag/uet/97201968"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=AW-856995443&amp;cx=c&amp;gtm=4e5bc1"></script><script type="text/javascript" async="" src="https://bat.bing.com/bat.js"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-FVSFQL3ELP&amp;cx=c&amp;gtm=4e5bc1"></script><script type="text/javascript" async="" src="https://www.googletagmanager.com/gtag/js?id=G-CRVSTY9DGE&amp;cx=c&amp;gtm=4e5bc1"></script><script id="wonderpush-jssdk" async="" src="https://cdn.by.wonderpush.com/sdk/1.1.41.0/wonderpush.min.js"></script><script type="text/javascript" id="sendinblue-js" async="" src="https://sibautomation.com/sa.js?key=kp2kh0ke62gk5ebjwqbsjpre"></script><script async="" src="https://cdn.bitrix24.es/b16000515/crm/form/loader_224.js?9795345"></script><script async="" src="//www.googletagmanager.com/gtm.js?id=GTM-MPNFC22"></script><script data-cfasync="false" data-pagespeed-no-defer="">
 	var gtm4wp_datalayer_name = "dataLayer";
